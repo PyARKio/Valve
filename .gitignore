@@ -1,0 +1,7 @@
+.idea
+*.pyc
+__pycache__
+Utilits/__pycache__
+test_curses.py
+Valve_test.log
+
