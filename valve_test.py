@@ -63,10 +63,11 @@ def run():
 
     workers = dict()
     for valve in valves:
-        workers[valve] = {'Worker': Worker(ip=ip, sn=valve, cycles=cycles), 'State': 'Waiting'}
+        workers[valve] = {'Worker': Worker(ip=ip, sn=valve, cycles=cycles+1), 'State': 'Waiting'}
         workers[valve]['Worker'].start()
 
-    while True:
+    flag = True
+    while flag:
         while CommonQueue.SysCQ.empty():
             sleep(0.01)
 
@@ -78,14 +79,19 @@ def run():
             log.info(data)
             if data['Error']:
                 log.info(workers)
-                workers[data['Object']]['Worker'].wait = False
-                workers[data['Object']]['Worker'].break_test = True
-                log.info(workers[data['Object']]['Worker'].is_alive())
-                while workers[data['Object']]['Worker'].is_alive():
-                    sleep(0.07)
-                del workers[data['Object']]
-                log.info(workers)
-                logout(workers=workers)
+                if workers.get(data['Object']):
+                    workers[data['Object']]['Worker'].wait = False
+                    workers[data['Object']]['Worker'].break_test = True
+                    log.info(workers[data['Object']]['Worker'].is_alive())
+                    while workers[data['Object']]['Worker'].is_alive():
+                        sleep(0.07)
+                    del workers[data['Object']]
+                    log.info(workers)
+
+                    if data['Event'] == 'Test was Ended':
+                        break
+
+                    logout(workers=workers)
             else:
                 workers[data['Object']]['State'] = 'Done'
                 logout(workers=workers)

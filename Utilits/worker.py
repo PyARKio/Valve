@@ -129,6 +129,7 @@ class Worker(Thread):
             self.__send_command()
 
         log.info('{}: TEST STOP'.format(str(self)))
+        CommonQueue.SysCQ.put({'Error': True, 'Event': 'Test was Ended', 'Object': str(self)}, block=False)
 
     @staticmethod
     def __wait_mqtt_rsp(cls, keys, timeout_msec, sub_command=None):
