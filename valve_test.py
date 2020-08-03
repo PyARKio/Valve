@@ -49,11 +49,11 @@ def logout(workers=None):
             log.info('')
             log.info('{}:'.format(device))
             log.info(
-                'Common number: ------------------------------- {}/{}'.format(worker['Worker'].common_count, cycles))
-            log.info('   |-> Good: --------------------------------- {}'.format(worker['Worker'].good))
-            log.info('   |-> Bad: ---------------------------------- {}'.format(worker['Worker'].bad))
-            log.info('        |-> Lost __node_sc_data__ from device: {}'.format(worker['Worker'].lost_node_sc_data))
-            log.info('        |-> Lost __command__ from Tablet: ---- {}'.format(worker['Worker'].lost_command))
+                '{}: Common number: ------------------------------- {}/{}'.format(device, worker['Worker'].common_count, cycles))
+            log.info('{}:    |-> Good: --------------------------------- {}'.format(device, worker['Worker'].good))
+            log.info('{}:    |-> Bad: ---------------------------------- {}'.format(device, worker['Worker'].bad))
+            log.info('{}:         |-> Lost __node_sc_data__ from device: {}'.format(device, worker['Worker'].lost_node_sc_data))
+            log.info('{}:         |-> Lost __command__ from Tablet: ---- {}'.format(device, worker['Worker'].lost_command))
 
 
 def run():

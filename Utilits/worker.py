@@ -39,7 +39,7 @@ class Worker(Thread):
             CommonQueue.SysCQ.put({'Error': True, 'Event': 'Disconnected', 'Object': str(self)}, block=False)
 
     def __conn(self):
-        for i in range(5):
+        for i in range(2):
             if self.__object.mqtt_connect(self.__ip, 1883):
                 return True
             sleep(0.7)
