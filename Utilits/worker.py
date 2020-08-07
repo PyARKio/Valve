@@ -11,7 +11,7 @@ from Utilits.CommonQueue import CommonQueue
 
 
 class Worker(Thread):
-    def __init__(self, ip, sn, cycles):
+    def __init__(self, ip, sn, cycles, wait_hb_after_comm):
         super().__init__()
         self.lost_command = 0
         self.common_count = 0
@@ -20,6 +20,9 @@ class Worker(Thread):
         self.bad = 0
         self.wait = True
         self.break_test = False
+        self.__hb_delay = 250000
+        self.__data_delay = 10000
+        self.__sub_command = None if wait_hb_after_comm else 'node_sc_data'
         self.__cycles = cycles
         self.__ip = ip
         self.__device = sn
@@ -36,7 +39,7 @@ class Worker(Thread):
         if self.__conn():
             self.__get_heartbeat()
         else:
-            CommonQueue.SysCQ.put({'Error': True, 'Event': 'Disconnected', 'Object': str(self)}, block=False)
+            CommonQueue.SysCQ.put({'Error': True, 'Event': "Can't connect to {}".format(self.__ip), 'Object': str(self)}, block=False)
 
     def __conn(self):
         for i in range(2):
@@ -49,7 +52,7 @@ class Worker(Thread):
         log.info('{}: Waiting a heartbeat...'.format(str(self)))
         rsp = Worker.__wait_mqtt_rsp(cls=self.__object,
                                      keys=['value', 'sequence'],
-                                     timeout_msec=70000,
+                                     timeout_msec=self.__hb_delay,
                                      sub_command='node_sc_heartbeat')
 
         if rsp:
@@ -66,9 +69,9 @@ class Worker(Thread):
     def __send_command(self):
         self.__object.publish(self.__topic_write, json.dumps(self.__command))
         rsp = Worker.__wait_mqtt_rsp(cls=self.__object,
-                                     keys=['value', 'sequence'],
-                                     timeout_msec=10000,
-                                     sub_command='node_sc_data')
+                                     keys=['sub_command', 'value', 'sequence'],
+                                     timeout_msec=self.__data_delay,
+                                     sub_command=self.__sub_command)
         log.info('{}: {}'.format(str(self), rsp))
         if rsp:
             if rsp['value'] == 1 or rsp['value'] == 2:
@@ -87,7 +90,7 @@ class Worker(Thread):
             log.info('{}: Not Received __node_sc_data__{}Waiting __node_sc_heartbeat__'.format(str(self), ' ' * 10))
             rsp = Worker.__wait_mqtt_rsp(cls=self.__object,
                                          keys=['value', 'sequence'],
-                                         timeout_msec=70000,
+                                         timeout_msec=self.__hb_delay,
                                          sub_command='node_sc_heartbeat')
 
             if rsp:
@@ -153,6 +156,13 @@ class Worker(Thread):
 
                             if len(rsp) == len(keys):
                                 break
+                    else:
+                        for key in keys:
+                            if key in d_payload.keys():
+                                rsp[key] = d_payload[key]
+
+                        if len(rsp) == len(keys):
+                            break
 
             except KeyboardInterrupt:
                 raise
@@ -163,7 +173,7 @@ class Worker(Thread):
 
 
 if __name__ == '__main__':
-    worker = Worker(ip='10.8.0.15', sn='00124b001d035fc2', cycles=50)
+    worker = Worker(ip='10.8.0.15', sn='00124b001d035fc2', cycles=50, wait_hb_after_comm=0)
     worker.start()
 
     while True:

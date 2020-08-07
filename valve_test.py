@@ -10,12 +10,16 @@ try:
     import curses
 except:
     pass
+from time import sleep
+from random import randint
 
 
 config = configparser.ConfigParser()
 config.read('./valves.config')
 valves = config['Devices']['Valves'].strip('][').split(', ')
 cycles = int(config['Devices']['Cycles'])
+delay_list_int = [int(delay)*1000 for delay in config['Devices']['Delay'].strip('][').split(', ')]
+wait_HB_after_comm = int(config['Devices']['Wait_HB_after_comm'])
 ip = config['Connection']['IP']
 
 
@@ -43,8 +47,6 @@ def logout(workers=None):
     global cycles
 
     if get_done(workers=workers):
-        send_all(workers=workers)
-
         for device, worker in workers.items():
             log.info('')
             log.info('{}:'.format(device))
@@ -55,6 +57,9 @@ def logout(workers=None):
             log.info('{}:         |-> Lost __node_sc_data__ from device: {}'.format(device, worker['Worker'].lost_node_sc_data))
             log.info('{}:         |-> Lost __command__ from Tablet: ---- {}'.format(device, worker['Worker'].lost_command))
 
+        sleep(randint(delay_list_int[0], delay_list_int[1]))
+        send_all(workers=workers)
+
 
 def run():
     global valves
@@ -63,7 +68,7 @@ def run():
 
     workers = dict()
     for valve in valves:
-        workers[valve] = {'Worker': Worker(ip=ip, sn=valve, cycles=cycles+1), 'State': 'Waiting'}
+        workers[valve] = {'Worker': Worker(ip=ip, sn=valve, cycles=cycles+1, wait_hb_after_comm=wait_HB_after_comm), 'State': 'Waiting'}
         workers[valve]['Worker'].start()
 
     flag = True
